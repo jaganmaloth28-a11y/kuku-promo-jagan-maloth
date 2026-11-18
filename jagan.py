@@ -375,7 +375,9 @@ if st.sidebar.button("✨ Analyze scripts", type="primary"):
             st.session_state["script_input_message"] = str(e)
             st.sidebar.error(f"Could not process the selected input: {e}")
 
-if os.path.exists(SAMPLE_RESULTS) and st.sidebar.button("↩ Show sample results"):
+if (os.path.exists(SAMPLE_RESULTS)
+        and os.path.exists(os.path.join(SESSION_OUTPUT_DIR, "promos_all.json"))
+        and st.sidebar.button("↩ Return to demo results")):
     session_json = os.path.join(SESSION_OUTPUT_DIR, "promos_all.json")
     if os.path.exists(session_json):
         os.remove(session_json)
@@ -425,27 +427,51 @@ st.html(f"""
 </section>
 """)
 
-summary_cards = st.columns(4)
-summary_values = [
-    ("Source coverage", str(total_eps), "episodes parsed"),
-    ("Promo review queue", str(len(all_promos)), "suggested cuts"),
-    ("Approved picks", str(approved_count), "saved for use"),
-    ("Reviewed", str(decision_count), "editor decisions saved"),
-]
-for column, (label, value, note) in zip(summary_cards, summary_values):
-    with column:
-        with st.container(border=True):
-            st.caption(label)
-            st.subheader(value)
-            st.caption(note)
-st.caption("These are script-review signals. Viewer retention and conversion need separate audience testing.")
-st.caption("Standalone clarity is a model estimate; the additional cold-viewer check runs on the top 20 candidates.")
+def render_summary_cards():
+    summary_cards = st.columns(4)
+    summary_values = [
+        ("Source coverage", str(total_eps), "episodes parsed"),
+        ("Promo review queue", str(len(all_promos)), "suggested cuts"),
+        ("Approved picks", str(approved_count), "saved for use"),
+        ("Reviewed", str(decision_count), "editor decisions saved"),
+    ]
+    for column, (label, value, note) in zip(summary_cards, summary_values):
+        with column:
+            with st.container(border=True):
+                st.caption(label)
+                st.subheader(value)
+                st.caption(note)
+
+
+if is_sample:
+    with st.expander("Run summary", expanded=False):
+        render_summary_cards()
+        st.caption("These are script-review signals. Viewer retention and conversion need separate audience testing.")
+        st.caption("Standalone clarity is a model estimate; the additional cold-viewer check runs on the top 20 candidates.")
+else:
+    render_summary_cards()
+    st.caption("These are script-review signals. Viewer retention and conversion need separate audience testing.")
+    st.caption("Standalone clarity is a model estimate; the additional cold-viewer check runs on the top 20 candidates.")
 if is_sample and all_promos:
-    st.info(
-        "Showing the prepared promo shortlist from this 50-episode show. Hook and ending timestamps are shown; source dialogue and full transcripts are hidden. Scores use local rules. "
-        "To analyze another show, upload its scripts in the left panel and click **Analyze scripts**.",
-        icon=":material/info:",
+    st.success(
+        "The demo is already loaded: 50 episodes and 150 promo suggestions. Script dialogue and full transcripts are hidden. Upload your own scripts in the left panel to analyze another show.",
+        title="Ready to review the solution",
+        icon=":material/check_circle:",
     )
+    featured = all_promos[0]
+    featured_segment = featured["segments"][0]
+    with st.container(border=True):
+        featured_text, featured_fit = st.columns([5, 1], vertical_alignment="center")
+        featured_text.markdown("#### Start with the top suggestion")
+        featured_text.caption(
+            f"Rank #{featured.get('rank', 1)} · {featured['id']} · Episode {featured_segment['episode']} · "
+            f"{featured['total_duration']} seconds"
+        )
+        featured_text.markdown(
+            f"**Suggested cut:** `{featured_segment['start']} → {featured_segment['end']}`"
+        )
+        featured_text.caption("Open the Promo picks tab below to approve, flag, or adjust this suggestion.")
+        featured_fit.metric("Fit", f"{featured['evaluation'].get('overall_score', 0)}/100")
 
 # Tabs
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
