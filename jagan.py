@@ -411,7 +411,7 @@ stability_flags = _stability.get("flags", {}) if _stability.get("token") == st.s
 total_eps = pipeline_data.get('summary', {}).get('episodes_processed', 0)
 approved_count = sum(1 for d in editorial_decisions.values() if d.get("status") == "APPROVED")
 decision_count = sum(1 for d in editorial_decisions.values() if d.get("status") in {"APPROVED", "FLAGGED", "REJECTED"})
-episode_meta = (f"{total_eps} episodes · prepared solution" if is_sample else f"{total_eps} episodes loaded") if total_eps else "Ready for your first script"
+episode_meta = (f"{total_eps} episodes · prepared shortlist" if is_sample else f"{total_eps} episodes loaded") if total_eps else "Ready for your first script"
 
 st.html(f"""
 <section class="hero">
@@ -442,7 +442,7 @@ st.caption("These are script-review signals. Viewer retention and conversion nee
 st.caption("Standalone clarity is a model estimate; the additional cold-viewer check runs on the top 20 candidates.")
 if is_sample and all_promos:
     st.info(
-        "Showing the prepared promo results for this 50-episode show. Source text is hidden, and scores use local rules. "
+        "Showing the prepared promo shortlist from this 50-episode show. Source text is hidden, and scores use local rules. "
         "To analyze another show, upload its scripts in the left panel and click **Analyze scripts**.",
         icon=":material/info:",
     )
