@@ -2,5 +2,4 @@ __pycache__/
 *.py[cod]
 outputs/
 kuku_scripts/
-sample_results/
 .streamlit/secrets.toml

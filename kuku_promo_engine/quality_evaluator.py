@@ -82,26 +82,26 @@ def evaluate_quality(tool_promos: List[Dict[str, Any]]) -> Dict[str, Any]:
     failure_modes = [
         {
             "category": "Mid-Scene Conversation Hooks",
-            "description": "Tool picks dialogue containing high-emotion keywords that starts 4 seconds into a continuous camera conversation, missing the visual anchor that makes a scrolling viewer stop.",
-            "example": "Episode 1: cut starting at 00:54.70 ('You let me dress in my mother's gown...') was ranked #1 by the algorithm because of keyword density, but missed the visual walk down the aisle at 00:11.00 where the matriarch bars the church doors.",
+            "description": "A candidate can start inside a conversation and miss an earlier visual setup.",
+            "example": "Episode 1: the selected start is later than the establishing visual moment.",
             "fix": "Weight candidate start points higher when paired with CAMERA establishing shots and physical door openings."
         },
         {
             "category": "Cliffhangers that Resolve Immediately",
-            "description": "Tool cuts on an unresolved question ('What do you mean?'), but in the actual show, the answer is immediately revealed in the next line without real jeopardy.",
-            "example": "Episode 3: tool cut at 01:18.90 on 'Stand aside, stranger!', mistaking a verbal warning for the cliffhanger and cutting right before the stranger's knockout punch at 01:24.50.",
+            "description": "A verbal question may be answered immediately by a later action beat.",
+            "example": "Episode 3: a candidate ending before the payoff can make the clip feel unresolved.",
             "fix": "Lookahead rule: if high-impact SOUND_FX or physical combat actions occur within 5 seconds of a candidate cut, extend the window to capture the action climax."
         },
         {
             "category": "Reaction Shot Clipping",
-            "description": "Cutting strictly on the final dialogue block omits the essential 1.5 to 2.5 seconds of non-verbal reaction (e.g. Juliana's eye twitching, clenched fists, swelling orchestral strings).",
-            "example": "Episode 1, cut ending at 02:07.50 cuts right as Gerald finishes speaking, clipping Juliana's clenched fist and string swell ending at 02:18.00.",
+            "description": "A cut at the final dialogue block may omit a non-verbal reaction or sound cue.",
+            "example": "Episode 1: the source timing may omit a reaction hold after the final dialogue.",
             "fix": "Extend the ending boundary to include contiguous CAMERA/SOUND_FX reaction blocks up to the next scene or dialogue start."
         },
         {
             "category": "Lore / Context Blindness (Stands-Alone Failures)",
-            "description": "The rule/AI tool gave high stand-alone scores to scenes referencing 'the Ashcroft ledger' (Ep 5), unaware that a casual viewer has no idea what this ledger contains or why it matters.",
-            "example": "Episode 5: The stepmother destroying the ledger is tragic only if you know Juliana's deceased mother left her an inheritance in it.",
+            "description": "A candidate may include an unfamiliar object or relationship without establishing why it matters.",
+            "example": "Episode 5: the significance of an object may depend on earlier context.",
             "fix": "Strict entity-grounding filter that penalizes unexplained proper nouns and unintroduced props."
         }
     ]

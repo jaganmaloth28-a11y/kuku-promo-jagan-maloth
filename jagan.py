@@ -411,7 +411,7 @@ stability_flags = _stability.get("flags", {}) if _stability.get("token") == st.s
 total_eps = pipeline_data.get('summary', {}).get('episodes_processed', 0)
 approved_count = sum(1 for d in editorial_decisions.values() if d.get("status") == "APPROVED")
 decision_count = sum(1 for d in editorial_decisions.values() if d.get("status") in {"APPROVED", "FLAGGED", "REJECTED"})
-episode_meta = (f"{total_eps} episodes · sample results" if is_sample else f"{total_eps} episodes loaded") if total_eps else "Ready for your first script"
+episode_meta = (f"{total_eps} episodes · prepared solution" if is_sample else f"{total_eps} episodes loaded") if total_eps else "Ready for your first script"
 
 st.html(f"""
 <section class="hero">
@@ -442,8 +442,8 @@ st.caption("These are script-review signals. Viewer retention and conversion nee
 st.caption("Standalone clarity is a model estimate; the additional cold-viewer check runs on the top 20 candidates.")
 if is_sample and all_promos:
     st.info(
-        "Showing pre-computed results for the sample show (script text removed). "
-        "To run on other scripts, upload them or choose a folder in the left panel and click **Analyze scripts**.",
+        "Showing the prepared promo results for this 50-episode show. Source text is hidden, and scores use local rules. "
+        "To analyze another show, upload its scripts in the left panel and click **Analyze scripts**.",
         icon=":material/info:",
     )
 
@@ -489,6 +489,9 @@ def get_candidate_edge_text(promo: dict, first: bool) -> str:
     if confidential_mode:
         if block.get("type") == "ACTION":
             return f"{timestamp}Action: [text hidden]"
+        if block.get("redacted"):
+            label = "Action" if block.get("type") == "ACTION" else (speaker or "Character")
+            return f"{timestamp}{label}: [source text hidden]"
         words = len(text.split())
         return f"{timestamp}{speaker}: [line hidden, {words} words]" if speaker else f"{timestamp}[line hidden, {words} words]"
     if block.get("type") == "ACTION":
@@ -889,18 +892,17 @@ with tab4:
     acc_val = benchmark_data.get("accuracy_pct")
     gt_count = benchmark_data.get("ground_truth_count", len(GROUND_TRUTH_PROMOS))
 
-    st.markdown(f"""
-    **Honest attribution & methodology:**
-    The author hand-labeled {gt_count} promo moments to serve as an illustrative quality sanity-check.
-    Below is the comparison between the human cuts and the tool's picks.
-    """)
+    benchmark_note = benchmark_data.get(
+        "statistical_significance_note",
+        "Reference cuts were used while building the tool; this is an exploratory sanity check, not independent validation.",
+    )
+    st.markdown(f"**Reference comparison:** {benchmark_note} Below is the comparison between the reference cuts and the tool's picks.")
     st.warning(
-        f"⚠️ **Statistical rigor:** {gt_count} hand-labels is a small sample. It shows failure modes; "
-        "it is not a statistically conclusive benchmark."
+        f"These {gt_count} reference cuts were used while building the tool. Treat the numbers as an exploratory sanity check, not an independent accuracy benchmark."
     )
 
     bm_c1, bm_c2, bm_c3 = st.columns(3)
-    bm_c1.metric("Hand-Labeled Promos", f"{gt_count} Moments")
+    bm_c1.metric("Reference Promos", f"{gt_count} Moments")
     bm_c2.metric("Mean IoU (Temporal Overlap)", f"{mean_iou_val}" if mean_iou_val is not None else "N/A")
     bm_c3.metric("Match Rate (IoU >= 0.35)", f"{acc_val}%" if acc_val is not None else "N/A")
 
@@ -943,14 +945,17 @@ with tab4:
     else:
         st.info("No benchmark matches found. Run pipeline to generate quality benchmark.")
 
-    st.markdown("### ⚠️ Where does the tool pick badly?")
+    st.markdown("### Potential failure modes")
     failure_modes = benchmark_data.get("failure_modes", [])
-    st.markdown(f"{len(failure_modes)} failure mode(s) found during quality testing:")
-    for fm in failure_modes:
-        with st.expander(f"🚨 {fm['category']}"):
-            st.markdown(f"**Description:** {scrub_quotes(fm['description'])}")
-            st.markdown(f"**Real example in dataset:** *{scrub_quotes(fm['example'])}*")
-            st.markdown(f"**How to fix in production:** `{fm['fix']}`")
+    if failure_modes:
+        st.markdown("Review notes from development:")
+        for fm in failure_modes:
+            with st.expander(f"🚨 {fm['category']}"):
+                st.markdown(f"**Description:** {scrub_quotes(fm['description'])}")
+                st.markdown(f"**Example:** *{scrub_quotes(fm['example'])}*")
+                st.markdown(f"**Possible fix:** `{fm['fix']}`")
+    else:
+        st.info("No independent failure-mode review is included with these prepared results.")
 
     # ---- Hold-out labels ----
     st.markdown("### Hold-out check (labels from later episodes)")
