@@ -112,20 +112,20 @@ class CandidateWindow:
 
         last_seg = self.segments[-1]
         seg_end = last_seg["end_sec"]
-        cliff_pts = 4.5
+        cliff_pts = 3.0
         late_blocks = [b for b in last_seg["blocks"] if b["end_sec"] >= seg_end - 5.0]
-        for b in late_blocks:
-            t = b["text"].lower()
-            if b["type"] == "DIALOGUE":
-                if "?" in t:
-                    cliff_pts += 2.0
-                if any(k in t for k in CLIFFHANGER_KEYWORDS):
-                    cliff_pts += 2.2
-                if b.get("emotion") and any(e in b["emotion"].lower() for e in HIGH_EMOTION_TAGS):
-                    cliff_pts += 1.2
-            elif b["type"] in ("SOUND_FX", "CAMERA", "ACTION"):
-                if any(k in t for k in ["cliffhanger", "cut to black", "swell", "drone", "ring", "defiance", "kneel"]):
-                    cliff_pts += 2.8
+        final_dialogue = next((b for b in reversed(late_blocks) if b["type"] == "DIALOGUE"), None)
+        if final_dialogue:
+            t = final_dialogue["text"].lower()
+            if "?" in final_dialogue["text"]:
+                cliff_pts += 2.0
+            if any(k in t for k in CLIFFHANGER_KEYWORDS):
+                cliff_pts += 1.2
+            if final_dialogue.get("emotion") and any(e in final_dialogue["emotion"].lower() for e in HIGH_EMOTION_TAGS):
+                cliff_pts += 0.8
+        final_cue = next((b for b in reversed(late_blocks) if b["type"] in ("SOUND_FX", "CAMERA", "ACTION")), None)
+        if final_cue and any(k in final_cue["text"].lower() for k in ["cliffhanger", "cut to black", "swell", "drone", "ring", "defiance", "kneel"]):
+            cliff_pts += 0.8
         self.code_cliffhanger_score = min(10.0, round(cliff_pts, 2))
 
         all_blocks = [b for seg in self.segments for b in seg["blocks"]]

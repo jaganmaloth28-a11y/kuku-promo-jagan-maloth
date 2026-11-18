@@ -118,14 +118,23 @@ class PromoPipeline:
 
         # 1. Generate single-segment candidates per episode
         print("[Pipeline] Generating single-segment candidate windows (20-60s)...")
+        coverage_debug_episodes = {27, 36, 47}
         for ep in self.episodes:
             # Generator ranks and deduplicates before returning; retain enough
             # valid alternatives without constructing thousands of transcripts.
             cands = generate_single_episode_windows(ep, min_duration=20.0, max_duration=60.0, max_candidates=10)
-            if not any(_validate_candidate(c, self.episodes) for c in cands):
-                cands = generate_single_episode_windows(
+            strict_generated = len(cands)
+            cands = [c for c in cands if _validate_candidate(c, self.episodes)]
+            strict_valid = len(cands)
+            relaxed_generated = 0
+            if not cands:
+                relaxed = generate_single_episode_windows(
                     ep, min_duration=20.0, max_duration=60.0, max_candidates=3, relaxed=True
                 )
+                relaxed_generated = len(relaxed)
+                cands = [c for c in relaxed if _validate_candidate(c, self.episodes)]
+            if ep.episode_num in coverage_debug_episodes:
+                print(f"[Coverage] Episode {ep.episode_num}: strict generated={strict_generated}, strict valid={strict_valid}, relaxed generated={relaxed_generated}, valid before prefilter={len(cands)}")
             all_candidates.extend(cands)
         print(f"[Pipeline] Generated {len(all_candidates)} single-segment candidates.")
 
@@ -159,6 +168,11 @@ class PromoPipeline:
             shortlist.extend(sorted(episode_candidates, key=lambda c: c.code_prelim_rank, reverse=True)[:Config.PREFILTER_PER_EPISODE])
         shortlist.extend(sorted(stitched_candidates, key=lambda c: c.code_prelim_rank, reverse=True)[:20])
         all_candidates = [c for c in shortlist if _validate_candidate(c, self.episodes)]
+        for episode_num in sorted(coverage_debug_episodes):
+            generated = sum(1 for c in all_candidates if c.candidate_type != "stitched" and c.segments[0]["episode"] == episode_num)
+            before = sum(1 for c in shortlist if c.candidate_type != "stitched" and c.segments[0]["episode"] == episode_num)
+            if any(ep.episode_num == episode_num for ep in self.episodes):
+                print(f"[Coverage] Episode {episode_num}: shortlisted={before}, valid after prefilter={generated}")
         print(f"[Pipeline] Code prefilter retained {len(all_candidates)} valid candidates.")
 
         if not all_candidates:
@@ -219,7 +233,7 @@ class PromoPipeline:
         print(f"[Pipeline] Top promo selected: {self.top_promos[0]['id']} with score {self.top_promos[0]['evaluation']['overall_score']}")
 
         # 5. Quality benchmark against hand-labeled ground truth (Eps 1-5)
-        print("[Pipeline] Benchmarking against hand-labeled ground truth...")
+        print("[Pipeline] Comparing against assistant-curated reference cuts (exploratory)...")
         self.quality_report = evaluate_quality(self.all_evaluated_promos)
 
         # 6. Export outputs to JSON and CSV

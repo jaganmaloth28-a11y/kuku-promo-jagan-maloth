@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import re
 import requests
 from typing import Any, Dict
 from .config import Config
@@ -104,7 +105,10 @@ def _code_reason(candidate) -> str:
     hook_words = sorted({k for b in opening for k in HOOK_KEYWORDS if k in b["text"].lower()})[:2]
     last = candidate.segments[-1]
     tail = [b for b in last["blocks"] if b["end_sec"] >= last["end_sec"] - 5.0]
-    ends_question = any(b["type"] == "DIALOGUE" and "?" in b["text"] for b in tail)
+    final_line = next((b for b in reversed(last["blocks"]) if b["type"] in ("DIALOGUE", "ACTION")), None)
+    ends_question = bool(final_line and final_line["type"] == "DIALOGUE"
+                         and re.search(r"\?(?:[!\"'”’]*)$", final_line["text"].strip()))
+    question_near_end = any(b["type"] == "DIALOGUE" and "?" in b["text"] for b in tail)
     cliff_words = sorted({k for b in tail for k in CLIFFHANGER_KEYWORDS if k in b["text"].lower()})[:2]
     if getattr(candidate, "relaxed_hook", False):
         opening_reason = "Relaxed fallback: opens on a question, exclamation, or high-emotion dialogue"
@@ -113,6 +117,8 @@ def _code_reason(candidate) -> str:
                           if hook_words else "Opens on dialogue within 3s")
     if ends_question:
         ending_reason = "ends on a question"
+    elif question_near_end:
+        ending_reason = "a question appears within the final five seconds, but the final line is declarative"
     elif cliff_words:
         ending_reason = "ends near tension words " + "/".join(f"'{w}'" for w in cliff_words)
     else:

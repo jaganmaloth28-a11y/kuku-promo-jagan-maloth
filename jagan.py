@@ -866,13 +866,13 @@ with tab1:
 
             raw_transcript = promo.get("formatted_transcript", "Transcript unavailable.")
             displayed_transcript = redact_transcript(raw_transcript) if confidential_mode else raw_transcript
-            with st.expander("Read the script excerpt" + (" (text hidden)" if confidential_mode else "")):
+            with st.expander("View script text" + (" (hidden in public demo)" if confidential_mode else "")):
                 st.text(displayed_transcript)
 
 # ----------------- TAB 2: BROWSE EPISODES -----------------
 with tab2:
     st.subheader("Browse moments by episode")
-    st.caption("Choose an episode to see suggested clips and read their script excerpts.")
+    st.caption("Choose an episode to review suggested clip timings. Script dialogue is hidden in the public demo.")
     ep_nums = sorted(list(set(s["episode"] for p in all_promos for s in p["segments"])))
     if ep_nums:
         selected_ep = st.selectbox("Episode", ep_nums, index=0)
