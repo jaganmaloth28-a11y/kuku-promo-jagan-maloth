@@ -232,7 +232,7 @@ class PromoPipeline:
         self.top_promos = self.all_evaluated_promos[:25]
         print(f"[Pipeline] Top promo selected: {self.top_promos[0]['id']} with score {self.top_promos[0]['evaluation']['overall_score']}")
 
-        # 5. Quality benchmark against hand-labeled ground truth (Eps 1-5)
+        # 5. Exploratory comparison against assistant-curated reference cuts.
         print("[Pipeline] Comparing against assistant-curated reference cuts (exploratory)...")
         self.quality_report = evaluate_quality(self.all_evaluated_promos)
 
