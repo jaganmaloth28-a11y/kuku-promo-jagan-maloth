@@ -442,7 +442,7 @@ st.caption("These are script-review signals. Viewer retention and conversion nee
 st.caption("Standalone clarity is a model estimate; the additional cold-viewer check runs on the top 20 candidates.")
 if is_sample and all_promos:
     st.info(
-        "Showing the prepared promo shortlist from this 50-episode show. Source text is hidden, and scores use local rules. "
+        "Showing the prepared promo shortlist from this 50-episode show. Selected hook and ending lines are shown; the remaining script text is hidden. Scores use local rules. "
         "To analyze another show, upload its scripts in the left panel and click **Analyze scripts**.",
         icon=":material/info:",
     )
@@ -487,6 +487,13 @@ def get_candidate_edge_text(promo: dict, first: bool) -> str:
     timestamp = f"[{block.get('start', '')}] "
     speaker = block.get("speaker")
     if confidential_mode:
+        public_edge = promo.get("public_hook" if first else "public_cliffhanger")
+        if public_edge:
+            edges = public_edge if isinstance(public_edge, list) else [public_edge]
+            return "\n".join(
+                f"[{edge.get('timestamp', '')}] {edge.get('speaker') or ('Action' if edge.get('type') == 'ACTION' else 'Character')}: “{edge.get('text', '')}”"
+                for edge in edges
+            )
         if block.get("type") == "ACTION":
             return f"{timestamp}Action: [text hidden]"
         if block.get("redacted"):
