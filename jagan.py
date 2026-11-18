@@ -442,7 +442,7 @@ st.caption("These are script-review signals. Viewer retention and conversion nee
 st.caption("Standalone clarity is a model estimate; the additional cold-viewer check runs on the top 20 candidates.")
 if is_sample and all_promos:
     st.info(
-        "Showing the prepared promo shortlist from this 50-episode show. Selected hook and ending lines are shown; the remaining script text is hidden. Scores use local rules. "
+        "Showing the prepared promo shortlist from this 50-episode show. Hook and ending timestamps are shown; source dialogue and full transcripts are hidden. Scores use local rules. "
         "To analyze another show, upload its scripts in the left panel and click **Analyze scripts**.",
         icon=":material/info:",
     )
